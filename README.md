@@ -26,7 +26,16 @@ git clone https://github.com/Lee-hyun-R/CryptoExpert-Pro.git
 cd CryptoExpert-Pro
 ```
 
-### 3. 安装好第三方库
+### 3. 配置环境
+```bash
+python -m venv venv
+# Windows 激活
+venv\\Scripts\\activate
+# Linux/Mac 激活
+source venv/bin/activate
+```
+
+### 4. 安装好第三方库
 所需要的库在**pyproject.toml**里有展示
 ```bash
 fastapi
@@ -44,7 +53,7 @@ scipy-stubs
 uvicorn
 ```
 
-### 4. 配置API_KEY
+### 5. 配置API_KEY
 新建.env文件，参考编辑以下内容（注意不用加双引号）
 ```bash
 DASHSCOPE_API_KEY=xxx
@@ -52,7 +61,7 @@ DASHSCOPE_BASE_URL=xxx
 DEEPSEEK_API_KEY=xxx
 TAVILY_API_KEY=xxx
 ```
-### 5. 启动
+### 6. 启动
 新建一个resources文件夹（用于存放对话历史）
 ```bash
 python main.py
