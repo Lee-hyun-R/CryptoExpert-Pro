@@ -86,7 +86,7 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
 ## 回复要求
 1. 先展示工具计算结果（包含原始数值）
 2. 用通俗语言解释结果含义
-3. 明确标注使用了哪些工具
+3. 明确标注使用了哪些工具，调用了哪些Tools
 4. 如需进一步分析，主动询问用户
 5. 若工具调用失败，说明原因并尝试搜索替代
 
