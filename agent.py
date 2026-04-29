@@ -1,40 +1,53 @@
+import logging
 import os
-import sqlite3
+from typing import Any
+
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
-from langchain.tools import tool
+from langchain_core.tools import BaseTool
 from langchain_tavily import TavilyResearch
 from langgraph.checkpoint.sqlite import SqliteSaver
-from langchain.agents import create_agent
-from langchain.messages import HumanMessage
+from langgraph.prebuilt import create_react_agent
+
 
 load_dotenv()
 
-
-#导入工具
+logger = logging.getLogger(__name__)
+from langchain.tools import tool
 from Tools.randomness_tools import randomness_tools
 from Tools.Sbox_tools_1 import Sbox_tools_1
 from Tools.Sbox_tools_2 import Sbox_tools_2
 
-# 封装成初始化函数，方便 main.py 调用
-def init_crypto_agent():
+def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> Any:
+    base_url = None
+    api_key = None
+
+    if model_provider == "deepseek":
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+    elif model_provider in ("openai", "qwen"):
+        base_url = os.getenv("DASHSCOPE_BASE_URL")
+        api_key = os.getenv("DASHSCOPE_API_KEY")
+
+    if not api_key:
+        raise ValueError(f"API key not found for provider: {model_provider}. Please check your .env file.")
+
+    logger.info(f"Creating agent with model: {model_name}, provider: {model_provider}")
+
+    model_kwargs = {"temperature": 0.5}
+    if base_url:
+        model_kwargs["base_url"] = base_url
+    model_kwargs["api_key"] = api_key
+
     model = init_chat_model(
-        # model="qwen3.6-max-preview",
-        # model_provider="openai",
-        # base_url=os.getenv("DASHSCOPE_BASE_URL"),
-        # api_key=os.getenv("DASHSCOPE_API_KEY"),
-        model="deepseek-chat",
-        temperature = 0.5,
+        model=model_name,
+        model_provider=model_provider,
+        **model_kwargs
     )
 
-    tavily = TavilyResearch(
-        max_results=5,
-        topic="general",
-    )
+    tavily = TavilyResearch(max_results=5, topic="general")
 
-    # 搜索Tool
     @tool
-    def web_search(query: str):
+    def web_search(query: str) -> str:
         """
         Web Search Tool, used to search online for relevant information.
         网络搜索工具，用于从网络搜索获取相关资料与参考信息。
@@ -48,38 +61,52 @@ def init_crypto_agent():
         """
         return tavily.invoke(query)
 
-    # 确保数据库路径存在
-    os.makedirs("resources", exist_ok=True)
-    connection = sqlite3.connect("resources/test.db", check_same_thread=False)
-    checkpointer = SqliteSaver(connection)
+    db_path = os.getenv("DB_PATH", "resources/test.db")
+    db_dir = os.path.dirname(db_path) or "resources"
+    os.makedirs(db_dir, exist_ok=True)
+
+    import sqlite3
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    checkpointer = SqliteSaver(conn)
     checkpointer.setup()
 
-    # 此处省略你原本的 system_promot (保持不变即可)
     system_prompt = """
-你是一个专注于密码算法分析的专业智能体，基于LangChain框架实现，核心职责是对各类密码相关的问题进行全面、深入的拆解与分析，为用户提供精准、专业的技术分析报告。
-你的分析需兼顾专业性、逻辑性和实用性，严格遵循密码学领域的标准术语和分析规范，确保输出内容严谨、可落地。
-# 你主要完成以下工作：
+你是一个基于LangChain构建的专注于密码算法分析的专业智能体。
 
-## 1. 计算S盒的性能指标
-    当用户要求计算某S盒的安全指标时，若用户已提供该S盒，调用与计算S盒性能指标相关的Tools进行计算分析；但如果只是简单的说，例如“请帮我分析AES-128算法的S盒”，先利用搜索工具得到目标S盒再进行计算分析。
-    如果用户指明了计算某个指标，计算该指标后进行分析；没有指明的话，先告诉用户，我目前能计算哪些指标，等待用户指出计算什么指标后再调用Tools进行计算分析。
+## 可用工具
+- web_search: 网络搜索，用于获取加密算法资料、S盒数据等
+- S盒性能指标计算工具: calculate_op, calculate_fp, calculate_dap, calculate_lap, calculate_sac, calculate_nonlinearity, calculate_resilience, calculate_bic, calculate_bic_sac, calculate_auto_correlation, calculate_maximum_dependence, calculate_maximum_diffusion
+- 比特序列随机性检测工具: monobit_test, chi_square_test, runs_test, longest_run_test, serial_test, approximate_entropy_test, cumulative_sums_test, binary_derivative_test
 
-## 2. 对比特序列进行随机性检测
-    当用户要求对某比特序列进行随机性检测时，利用与随机性检测相关的Tools，根据计算结果进行分析。
-    如果用户指明了使用某方法进行检测，如果有对应的Tools，就用对应的Tools进行计算；而如果没有相关的Tools，可以利用搜索工具进行搜索后得出结果，但是需要说明该结果不是计算得来的，并表明出处。
+## 工作流程
+1. 若用户提供了具体的S盒或比特序列，直接调用对应工具计算
+2. 若用户只说了算法名称（如"AES-128"），先用web_search获取相关参数，再进行计算
+3. 若没有对应的工具可用，直接使用web_search搜索并标注信息来源
 
-请积极调用各种Tools，尤其是当用户说想要检测某些指标时，先看一下有没有Tools是专门用于计算需求的指标的，如有对应的Tools务必调用，并结合计算结果进行分析，而如果没有对应的Tools，请上网查阅相关资源，结合搜索结果进行总结，可以适当自由发挥。
+## 回复要求
+1. 先展示工具计算结果（包含原始数值）
+2. 用通俗语言解释结果含义
+3. 明确标注使用了哪些工具
+4. 如需进一步分析，主动询问用户
+5. 若工具调用失败，说明原因并尝试搜索替代
 
-## 注意：如果调用了某些工具，需要向用户说一下此次分析调用了哪些Tools。
-请始终以“专业、严谨、高效”为原则，完成密码算法的分析工作，确保输出内容符合用户需求，适配LangChain智能体的运行逻辑，助力用户快速掌握密码算法的核心特性与安全状况。
-    """
+## 注意
+若用户未明确指定要计算哪个指标，先告知用户你能计算哪些指标，等待用户选择。
+"""
 
-    agent_tools = [] + randomness_tools + Sbox_tools_1 + Sbox_tools_2
+    agent_tools: list[BaseTool] = [web_search] + randomness_tools + Sbox_tools_1 + Sbox_tools_2
 
-    agent = create_agent(
+    agent = create_react_agent(
         model=model,
         tools=agent_tools,
-        system_prompt=system_prompt,
+        prompt=system_prompt,
         checkpointer=checkpointer,
     )
+    logger.info(f"Agent created successfully with model: {model_name}")
     return agent
+
+
+def init_crypto_agent() -> Any:
+    model_name = os.getenv("MODEL_NAME", "deepseek-chat")
+    model_provider = os.getenv("MODEL_PROVIDER", "deepseek")
+    return create_crypto_agent(model_name, model_provider)
