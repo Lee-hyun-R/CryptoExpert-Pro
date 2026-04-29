@@ -144,7 +144,7 @@ async def delete_chat(thread_id: str) -> dict:
     logger.info(f"Deleting chat thread: {thread_id}")
     try:
         import sqlite3
-        conn = sqlite3.connect("resources/test.db")
+        conn = sqlite3.connect("resources/test.db", check_same_thread=False)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
         cursor.execute("DELETE FROM checkpoint_writes WHERE thread_id = ?", (thread_id,))

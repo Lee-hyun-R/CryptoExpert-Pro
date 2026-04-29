@@ -68,7 +68,6 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
     import sqlite3
     conn = sqlite3.connect(db_path, check_same_thread=False)
     checkpointer = SqliteSaver(conn)
-    checkpointer.setup()
 
     system_prompt = """
 你是一个基于LangChain构建的专注于密码算法分析的专业智能体。
