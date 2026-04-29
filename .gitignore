@@ -5,3 +5,4 @@ resources/*.db
 .vscode/
 *.pyc
 .venv
+.idea/
