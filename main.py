@@ -117,15 +117,26 @@ async def get_history(thread_id: str) -> dict:
             return {"status": "success", "history": []}
 
         raw_messages = state.values.get("messages", [])
+        cleaned_messages = []
+        last_ai_tool_idx = None
+        for i, msg in enumerate(raw_messages):
+            if msg.type == "ai" and hasattr(msg, "tool_calls") and msg.tool_calls:
+                last_ai_tool_idx = i
+            if msg.type == "tool":
+                last_ai_tool_idx = None
+
+        if last_ai_tool_idx is not None:
+            cleaned_messages = [msg for i, msg in enumerate(raw_messages) if i <= last_ai_tool_idx]
+        else:
+            cleaned_messages = raw_messages
+
         formatted_history = []
 
-        for msg in raw_messages:
+        for msg in cleaned_messages:
             if msg.type == "human":
                 formatted_history.append({"role": "user", "content": msg.content})
             elif msg.type == "ai" and msg.content:
                 formatted_history.append({"role": "ai", "content": msg.content})
-            elif msg.type == "tool":
-                formatted_history.append({"role": "tool", "content": msg.content})
 
         logger.info(f"History retrieved, {len(formatted_history)} messages")
         return {"status": "success", "history": formatted_history}
