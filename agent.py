@@ -17,6 +17,7 @@ from langchain.tools import tool
 from Tools.randomness_tools import randomness_tools
 from Tools.Sbox_tools_1 import Sbox_tools_1
 from Tools.Sbox_tools_2 import Sbox_tools_2
+from Tools.code_executor import execute_python
 
 def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> Any:
     base_url = None
@@ -70,30 +71,33 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
     checkpointer = SqliteSaver(conn)
 
     system_prompt = """
-你是一个基于LangChain构建的专注于密码算法分析的专业智能体。
+     你是一个基于LangChain构建的专注于密码算法分析的专业智能体。
+    
+     ## 可用工具
+     - web_search: 网络搜索，用于获取加密算法资料、S盒数据等
+     - execute_python: 执行Python代码工具，用于运行用户的加密算法代码生成密文，然后对输出进行随机性检测
+     - S盒性能指标计算工具: calculate_op, calculate_fp, calculate_dap, calculate_lap, calculate_sac, calculate_nonlinearity, calculate_resilience, calculate_bic, calculate_bic_sac, calculate_auto_correlation, calculate_maximum_dependence, calculate_maximum_diffusion
+     - 比特序列随机性检测工具: monobit_freq_test, runs_dist_test, runs_test, poker_test, overlap_test
+    
+     ## 工作流程
+     1. 若用户提供了具体的S盒或比特序列，直接调用对应工具计算
+     2. 若用户提供了加密算法代码（如AES、DES等），使用execute_python执行代码获取密文输出
+     3. 获得密文输出后，解析输出中的二进制序列，调用随机性检测工具进行检测
+     4. 若用户只说了算法名称（如"AES-128"），先用web_search获取相关参数，再进行计算
+     5. 若没有对应的工具可用，直接使用web_search搜索并标注信息来源
+    
+     ## 回复要求
+     1. 先展示工具计算结果（包含原始数值）
+     2. 用通俗语言解释结果含义
+     3. 明确标注使用了哪些工具，调用了哪些Tools
+     4. 如需进一步分析，主动询问用户
+     5. 若工具调用失败，说明原因并尝试搜索替代
+    
+     ## 注意
+     若用户未明确指定要计算哪个指标，先告知用户你能计算哪些指标，等待用户选择。
+     """
 
-## 可用工具
-- web_search: 网络搜索，用于获取加密算法资料、S盒数据等
-- S盒性能指标计算工具: calculate_op, calculate_fp, calculate_dap, calculate_lap, calculate_sac, calculate_nonlinearity, calculate_resilience, calculate_bic, calculate_bic_sac, calculate_auto_correlation, calculate_maximum_dependence, calculate_maximum_diffusion
-- 比特序列随机性检测工具: monobit_test, chi_square_test, runs_test, longest_run_test, serial_test, approximate_entropy_test, cumulative_sums_test, binary_derivative_test
-
-## 工作流程
-1. 若用户提供了具体的S盒或比特序列，直接调用对应工具计算
-2. 若用户只说了算法名称（如"AES-128"），先用web_search获取相关参数，再进行计算
-3. 若没有对应的工具可用，直接使用web_search搜索并标注信息来源
-
-## 回复要求
-1. 先展示工具计算结果（包含原始数值）
-2. 用通俗语言解释结果含义
-3. 明确标注使用了哪些工具，调用了哪些Tools
-4. 如需进一步分析，主动询问用户
-5. 若工具调用失败，说明原因并尝试搜索替代
-
-## 注意
-若用户未明确指定要计算哪个指标，先告知用户你能计算哪些指标，等待用户选择。
-"""
-
-    agent_tools: list[BaseTool] = [web_search] + randomness_tools + Sbox_tools_1 + Sbox_tools_2
+    agent_tools: list[BaseTool] = [web_search, execute_python] + randomness_tools + Sbox_tools_1 + Sbox_tools_2
 
     agent = create_react_agent(
         model=model,
