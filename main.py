@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 MODEL_CONFIGS = {
     "deepseek-chat": {"name": "deepseek-chat", "provider": "deepseek", "label": "DeepSeek Chat"},
     "qwen3.6-max-preview": {"name": "qwen3.6-max-preview", "provider": "openai", "label": "Qwen 3.6 Max"},
+    "kimi-k2.6": {"name": "kimi-k2.6", "provider": "kimi", "label": "Kimi K2.6"},
+    "mimo-v2.5-pro": {"name": "mimo-v2.5-pro", "provider": "mimo", "label": "Mimo V2.5 Pro"},
 }
 
 agents: dict = {}
@@ -91,9 +93,23 @@ async def chat_endpoint(chat_msg: ChatMessage) -> dict:
 
         response = agent.invoke(
             {"messages": [HumanMessage(content=chat_msg.message)]},
-            config
+            {"configurable": {"thread_id": thread_id}, "recursion_limit": 100}
         )
-        ai_reply = response["messages"][-1].content
+
+        messages = response["messages"]
+        logger.info(f"Response messages count: {len(messages)}")
+        
+        ai_reply = ""
+        for msg in reversed(messages):
+            if msg.type == "ai" and msg.content:
+                ai_reply = msg.content
+                break
+            elif msg.type == "ai":
+                logger.info(f"Found AI message with empty content: {msg}")
+
+        if not ai_reply:
+            logger.warning(f"No AI response found, last 3 messages: {messages[-3:] if len(messages) >= 3 else messages}")
+
         logger.info(f"Chat response sent, thread_id: {thread_id}")
         return {"status": "success", "reply": ai_reply, "thread_id": thread_id, "model": model}
     except Exception as e:
@@ -155,7 +171,8 @@ async def delete_chat(thread_id: str) -> dict:
     logger.info(f"Deleting chat thread: {thread_id}")
     try:
         import sqlite3
-        conn = sqlite3.connect("resources/test.db", check_same_thread=False)
+        conn = sqlite3.connect("resources/test.db", check_same_thread=False, timeout=10)
+        conn.execute("PRAGMA busy_timeout = 5000")
         cursor = conn.cursor()
         cursor.execute("DELETE FROM checkpoints WHERE thread_id = ?", (thread_id,))
         cursor.execute("DELETE FROM checkpoint_writes WHERE thread_id = ?", (thread_id,))
@@ -171,4 +188,4 @@ async def delete_chat(thread_id: str) -> dict:
 
 if __name__ == "__main__":
     # 启动服务器
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8001)

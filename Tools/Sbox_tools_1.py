@@ -1,6 +1,14 @@
 import math
 from langchain.tools import tool
 
+
+def _to_int(x):
+    """Convert hex strings or ints to int. Handles '0xC', '0xC', 12, etc."""
+    if isinstance(x, str):
+        return int(x, 16) if x.startswith(('0x', '0X')) else int(x)
+    return int(x)
+
+
 # ====================== S盒结构检测工具合集1 开始 ======================
 
 @tool
@@ -16,7 +24,7 @@ def calculate_op(S_box: list[int | str], length: int = 16):
     Returns:
         int: S盒置换阶数值
     """
-    S_box = [int(x) for x in S_box]
+    S_box = [_to_int(x) for x in S_box]
 
     def gcd(a, b):
         while b != 0:
@@ -54,7 +62,7 @@ def calculate_fp(s_box: list[int | str], length: int = 16):
     Returns:
         int: S盒不动点数量
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
     count = 0
     for i in range(length):
         if s_box[i] == i:
@@ -75,7 +83,7 @@ def calculate_ofp(s_box: list[int | str], length: int = 16):
     Returns:
         int: S盒反不动点数量
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
     count = 0
     mask = length - 1
     for i in range(length):
@@ -98,7 +106,7 @@ def ifSAC(S: list[int | str], inputlen: int = 4, outputlen: int = 4):
     Returns:
         dict: 包含是否通过、检测说明、异常概率
     """
-    S = [int(x) for x in S]
+    S = [_to_int(x) for x in S]
     n = 2 ** inputlen
     initial = 2 ** (inputlen - 1)
 
@@ -143,7 +151,7 @@ def ifBIC(S: list[int | str], inputlen: int = 4, outputlen: int = 4):
     Returns:
         dict: 包含是否通过、相关系数、异常说明
     """
-    S = [int(x) for x in S]
+    S = [_to_int(x) for x in S]
     inputsum = 2 ** inputlen
     initial = 2 ** (inputlen - 1)
 
@@ -202,7 +210,7 @@ def calculate_ai(S: list[int | str], inputlen: int = 4, outputlen: int = 4):
     Returns:
         int: 代数免疫性最大绝对值和指标
     """
-    S = [int(x) for x in S]
+    S = [_to_int(x) for x in S]
     inputsum = 2 ** inputlen
     outputsum = 2 ** outputlen
     aimax = 0
@@ -240,7 +248,7 @@ def calculate_ssi(S: list[int | str], inputlen: int = 4, outputlen: int = 4):
     Returns:
         int: 平方和指标SSI数值
     """
-    S = [int(x) for x in S]
+    S = [_to_int(x) for x in S]
     inputsum = 2 ** inputlen
     outputsum = 2 ** outputlen
     aimax = 0
@@ -276,7 +284,7 @@ def calcu_lat(s_box: list[int | str], input_len: int = 4, output_len: int = 4):
     Returns:
         list[list[int]]: 线性近似表二维数组
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
 
     def inner(a, b, length):
         result = a & b
@@ -315,7 +323,7 @@ def calculate_lap(s_box: list[int | str], input_len: int = 4, output_len: int = 
     Returns:
         float: 最大线性逼近概率
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
 
     def inner(a, b, length):
         result = a & b
@@ -356,7 +364,7 @@ def calculate_nl(s_box: list[int | str], input_len: int = 4, output_len: int = 4
     Returns:
         int: S盒非线性度数值
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
 
     def inner(a, b, length):
         result = a & b
@@ -399,7 +407,7 @@ def calculate_lbn(s_box: list[int | str], input_length: int = 4, output_length: 
     Returns:
         int: S盒线性分支数
     """
-    s_box = [int(x) for x in s_box]
+    s_box = [_to_int(x) for x in s_box]
 
     def calculate_weight(goal, length):
         temp = 2 ** (length - 1)

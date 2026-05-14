@@ -2,6 +2,14 @@ import math
 from langchain.tools import tool
 import numpy as np
 
+
+def _to_int(x):
+    """Convert hex strings or ints to int. Handles '0xC', '0xC', 12, etc."""
+    if isinstance(x, str):
+        return int(x, 16) if x.startswith(('0x', '0X')) else int(x)
+    return int(x)
+
+
 # ====================== S盒结构检测工具合集2 开始 ======================
 
 @tool
@@ -18,7 +26,7 @@ def check_linear_structure(sbox: list[int | str], n: int = 4, m: int = 4):
     Returns:
         int: 1=存在线性结构，0=不存在
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     # 内部点积函数
     def dot_product(a, b, bits):
@@ -74,7 +82,7 @@ def analyze_sbox_ci(sbox: list[int | str], n: int = 4, m: int = 4):
         int: S盒最小相关免疫阶数
     """
     # 转换为十进制
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     # 汉明重量
     def hamming_weight(x, n_bits):
@@ -155,7 +163,7 @@ def calculate_du(sbox: list[int | str], n: int = 4, m: int = 4):
         int: 差分均匀性 DU 值
     """
     # 转换为十进制
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     # 内部：计算差分分布表 DDT
     def haveddt(sbox, n, m):
@@ -201,7 +209,7 @@ def calculate_dbn(sbox: list[int | str], n: int = 4, m: int = 4):
         int: S盒差分分支数 DBN 值
     """
     # 统一转换为十进制整数
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     # 内部函数：计算汉明重量
     def hamming_weight(x, n_bits):
@@ -246,7 +254,7 @@ def analyze_sbox_pc(sbox: list[int | str], n: int = 4, m: int = 4):
     Returns:
         int: S盒最小传播特性阶数
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def hamming_weight(x: int) -> int:
         weight = 0
@@ -317,7 +325,7 @@ def calculate_ubd(sbox: list[int | str], n: int = 4, m: int = 4):
     Returns:
         float: S盒无扰动比特密度 UBD 值
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def hamming_weight(x, n_bits):
         weight = 0
@@ -401,7 +409,7 @@ def calculate_bu(sbox: list[int | str], n: int = 4, m: int = 4):
     Returns:
         int: S盒回旋均匀性 BU 值
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def compute_bct(sbox, n, m):
         input_size = 1 << n
@@ -447,7 +455,7 @@ def calculate_dlu(sbox: list[int | str]) -> int:
     Returns:
         int: S盒差分-线性均匀性 DLU 值
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def dot_product(a, b):
         return bin(a & b).count('1') % 2
@@ -484,7 +492,7 @@ def calculate_algebraic_degree(sbox: list[int | str]) -> int:
     Returns:
         int: S盒代数次数
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def _compute_boolean_degree(f, n):
         mobius = [0] * (1 << n)
@@ -533,7 +541,7 @@ def calculate_dpa_snr(sbox: list[int | str], key: int, num_traces: int = 1000, n
         float: DPA-SNR 值
     """
     # 统一转换为十进制
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     # 内部：汉明重量
     def hamming_weight(x):
@@ -575,7 +583,7 @@ def calculate_transparency_order(sbox: list[int | str]) -> float:
     Returns:
         float: S盒透明阶值
     """
-    sbox = [int(x) for x in sbox]
+    sbox = [_to_int(x) for x in sbox]
 
     def hamming_weight(x):
         return bin(x).count('1')
