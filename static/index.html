@@ -353,12 +353,15 @@
                 <div class="model-selector" id="modelSelector">
                     <div class="model-dropdown" id="modelDropdown">
                         <button class="model-btn" id="modelBtn">
-                            <span id="currentModelText">deepseek-chat</span>
+                            <span id="currentModelText">deepseek-v4-flash</span>
                             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
                         </button>
                         <div class="model-menu">
-                            <div class="model-option selected" data-value="deepseek-chat">
-                                <span class="model-option-name">deepseek-chat</span>
+                            <div class="model-option selected" data-value="deepseek-v4-flash">
+                                <span class="model-option-name">DeepSeek V4 Flash</span>
+                            </div>
+                            <div class="model-option" data-value="deepseek-v4-pro">
+                                <span class="model-option-name">DeepSeek V4 Pro</span>
                             </div>
                             <div class="model-option" data-value="qwen3.6-max-preview">
                                 <span class="model-option-name">qwen3.6</span>
@@ -403,7 +406,7 @@
         const historyList = document.getElementById('historyList');
         const userInput = document.getElementById('userInput');
 
-        let currentModel = 'deepseek-chat';
+        let currentModel = 'deepseek-v4-flash';
 
         menuToggle.onclick = () => sidebar.classList.toggle('collapsed');
 

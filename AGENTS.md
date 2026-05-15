@@ -18,8 +18,8 @@ No test suite, linter, or type checker is configured.
 ## Architecture
 
 - `main.py` — FastAPI entry point. Lazy-creates agents per model in a `agents` dict cache.
-- `agent.py` — `create_crypto_agent()` builds a LangGraph ReAct agent per model. System prompt is in Chinese. Provider routing: `"deepseek"` → DeepSeek API; `"openai"` / `"qwen"` → DashScope; `"kimi"` / `"mimo"` → rewritten to `provider="openai"` with custom `base_url`.
-- `Tools/` — 27 LangChain `@tool` functions exported as 3 lists: `randomness_tools` (5), `Sbox_tools_1` (11), `Sbox_tools_2` (11). Plus `execute_python` (subprocess code runner). `structural_tools.py` is empty.
+- `agent.py` — `create_crypto_agent()` builds a LangGraph ReAct agent per model. System prompt is in Chinese. Provider routing: `"deepseek"` → DeepSeek API (uses `langchain-deepseek` for `reasoning_content` handling); `"openai"` / `"qwen"` → DashScope; `"kimi"` / `"mimo"` → rewritten to `provider="openai"` with custom `base_url`.
+- `Tools/` — 29 LangChain `@tool` functions total: `randomness_tools` (5), `Sbox_tools_1` (11), `Sbox_tools_2` (11), `execute_python` (subprocess code runner), plus `web_search` (Tavily, defined inline in `agent.py`). `structural_tools.py` is empty.
 - `static/index.html` — Single-page frontend.
 - `clear_db.py` — Deletes all rows from SQLite checkpoint tables.
 
@@ -29,6 +29,8 @@ No test suite, linter, or type checker is configured.
 
 ```
 DEEPSEEK_API_KEY=...
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_API_BASE=https://api.deepseek.com/v1
 DASHSCOPE_API_KEY=...
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 KIMI_API_KEY=...
@@ -43,9 +45,9 @@ DB directory auto-created if missing. SQLite checkpointer uses `check_same_threa
 
 ## Gotchas
 
-- **Port mismatch**: `main.py:189` binds to **8001**. README, `docker-compose.yml`, and `test_main.http` all reference 8000. Docker maps `8000:8000` but container listens on 8001 — deploy is broken without fixing one side.
-- **Provider quirks**: Kimi K2.6 forces `temperature=0.6` and disables thinking via `extra_body={"thinking": {"type": "disabled"}}` (its default is thinking ON). Mimo disables thinking via `extra_body={"enable_thinking": False}`. Both are needed because LangChain doesn't handle `reasoning_content` in multi-turn calls.
-- **Recursion limit**: Agent invoke uses `recursion_limit=100` (`main.py:96`).
+- **Port mismatch**: `main.py:190` binds to **8001**. README, `docker-compose.yml`, and `test_main.http` all reference 8000. Docker maps `8000:8000` but container listens on 8001 — deploy is broken without fixing one side.
+- **Provider quirks**: DeepSeek V4 Pro and V4 Flash both disable thinking via `extra_body={"thinking": {"type": "disabled"}}` (default is ON, causes `reasoning_content` passback error in multi-turn calls if not disabled). Kimi K2.6 forces `temperature=0.6` and disables thinking via `extra_body={"thinking": {"type": "disabled"}}` (its default is thinking ON). Mimo disables thinking via `extra_body={"enable_thinking": False}`. DeepSeek models use `langchain-deepseek` for API calls.
+- **Recursion limit**: Agent invoke uses `recursion_limit=100` (`main.py:97`).
 - **uv index**: Default PyPI source is Tsinghua mirror (`https://pypi.tuna.tsinghua.edu.cn/simple`) — may be slow outside China.
 - **Message cleanup**: Both `/api/chat/` and `/api/history/{thread_id}` truncate dangling tool-call messages before returning.
 - **Code execution**: `execute_python` runs user code via `subprocess` with a 30s timeout in a temp file.

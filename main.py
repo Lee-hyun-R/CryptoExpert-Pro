@@ -19,7 +19,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 MODEL_CONFIGS = {
-    "deepseek-chat": {"name": "deepseek-chat", "provider": "deepseek", "label": "DeepSeek Chat"},
+    "deepseek-v4-flash": {"name": "deepseek-v4-flash", "provider": "deepseek", "label": "DeepSeek V4 Flash"},
+    "deepseek-v4-pro": {"name": "deepseek-v4-pro", "provider": "deepseek", "label": "DeepSeek V4 Pro"},
     "qwen3.6-max-preview": {"name": "qwen3.6-max-preview", "provider": "openai", "label": "Qwen 3.6 Max"},
     "kimi-k2.6": {"name": "kimi-k2.6", "provider": "kimi", "label": "Kimi K2.6"},
     "mimo-v2.5-pro": {"name": "mimo-v2.5-pro", "provider": "mimo", "label": "Mimo V2.5 Pro"},
@@ -42,7 +43,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 class ChatMessage(BaseModel):
     message: str
     thread_id: str | None = None
-    model: str = "deepseek-chat"
+    model: str = "deepseek-v4-flash"
 
 
 # 1. 路由：提供前端 HTML 页面
@@ -120,7 +121,7 @@ async def chat_endpoint(chat_msg: ChatMessage) -> dict:
 @app.get("/api/history/{thread_id}")
 async def get_history(thread_id: str) -> dict:
     logger.info(f"History request for thread_id: {thread_id}")
-    default_model = "deepseek-chat"
+    default_model = "deepseek-v4-flash"
     if default_model not in agents:
         config = MODEL_CONFIGS[default_model]
         agents[default_model] = create_crypto_agent(config["name"], config["provider"])

@@ -45,13 +45,15 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
 
     temperature = 0.6 if model_name.startswith("kimi") else 0.5
     model_kwargs = {"temperature": temperature}
-    if base_url:
+    if base_url and model_provider != "deepseek":
         model_kwargs["base_url"] = base_url
     model_kwargs["api_key"] = api_key
 
     if model_name.startswith("mimo"):
         model_kwargs["extra_body"] = {"enable_thinking": False}
     elif model_name.startswith("kimi"):
+        model_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+    elif model_name.startswith("deepseek"):
         model_kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
 
     model = init_chat_model(
@@ -136,6 +138,6 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
 
 
 def init_crypto_agent() -> Any:
-    model_name = os.getenv("MODEL_NAME", "deepseek-chat")
+    model_name = os.getenv("MODEL_NAME", "deepseek-v4-flash")
     model_provider = os.getenv("MODEL_PROVIDER", "deepseek")
     return create_crypto_agent(model_name, model_provider)
