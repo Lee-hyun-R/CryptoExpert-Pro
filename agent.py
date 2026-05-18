@@ -144,6 +144,7 @@ def create_crypto_agent(model_name: str, model_provider: str = "deepseek") -> An
 - 不要一次问太多问题，可以分批次询问
 - 如果用户已经提供了部分信息，只需要询问缺失的部分
 - 当用户明确表示"直接分析"、"你来决定"等，可以使用默认参数，但需要告知用户你将使用什么参数
+"""
 
     agent_tools: list[BaseTool] = [web_search, execute_python] + randomness_tools + Sbox_tools_1 + Sbox_tools_2
 
