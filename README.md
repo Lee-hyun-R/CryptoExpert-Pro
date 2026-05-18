@@ -30,7 +30,7 @@
 - 重叠子序列检测 (Overlap Test)
 
 ### 智能对话系统
-- 支持多模型切换（DeepSeek Chat / Qwen 3.6）
+- 支持多模型切换（DeepSeek V4 Flash / DeepSeek V4 Pro / Qwen 3.6 / Kimi K2.6 / Mimo V2.5 Pro）
 - 自动工具调用（网络搜索 + 本地计算工具）
 - 对话持久化（SQLite 存储上下文）
 - 流式响应 + Markdown 渲染
@@ -81,11 +81,20 @@ cd CryptoExpert-Pro
 ```bash
 # DeepSeek 配置
 DEEPSEEK_API_KEY=your_deepseek_key
-DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+DEEPSEEK_API_BASE=https://api.deepseek.com/v1
 
 # 通义千问配置
 DASHSCOPE_API_KEY=your_qwen_key
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+
+# Kimi (Moonshot) 配置
+KIMI_API_KEY=your_kimi_key
+KIMI_BASE_URL=https://api.moonshot.cn/v1
+
+# Mimo (小米) 配置
+MIMO_API_KEY=your_mimo_key
+MIMO_BASE_URL=https://api.xiaomimimo.com/v1
 
 # 网络搜索配置
 TAVILY_API_KEY=your_tavily_key
@@ -110,7 +119,7 @@ mkdir -p resources
 
 # 启动服务
 python main.py
-# 访问 http://127.0.0.1:8000
+# 访问 http://127.0.0.1:8001
 ```
 
 ### 6. Docker 部署
@@ -139,9 +148,11 @@ Agent_load/
 │   └── index.html       # 前端页面
 ├── Tools/
 │   ├── __init__.py
+│   ├── code_executor.py       # Python 代码执行工具
 │   ├── randomness_tools.py    # 随机性检测工具 (5个)
 │   ├── Sbox_tools_1.py        # S盒工具集1 (11个)
-│   └── Sbox_tools_2.py        # S盒工具集2 (11个)
+│   ├── Sbox_tools_2.py        # S盒工具集2 (11个)
+│   └── structural_tools.py    # 结构化工具（预留）
 └── resources/
     └── test.db          # SQLite 数据库（自动创建）
 ```
@@ -181,6 +192,9 @@ Agent_load/
 ```
 fastapi>=0.136.1
 langchain>=1.2.15
+langchain-deepseek>=1.0.1
+langchain-openai>=1.2.0
+langchain-tavily>=0.2.18
 langgraph>=1.1.9
 langgraph-checkpoint-sqlite>=3.0.3
 numpy>=2.4.4
